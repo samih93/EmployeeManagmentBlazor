@@ -1,0 +1,43 @@
+﻿@page "/"
+@using Syncfusion.Blazor.Grids
+
+<h1>Hello, world!</h1>
+
+Welcome to your new app.
+
+<SurveyPrompt Title="How is Blazor working for you?" />
+
+
+@if (Employees == null)
+{
+    <div class="spinner">
+
+    </div>
+}
+else
+{
+    <SfGrid DataSource="Employees" AllowPaging="true">
+        <GridPageSettings PageSize="5" PageCount="3" PageSizes="true">
+
+        </GridPageSettings>
+        <GridColumns>
+            <GridColumn Field="@nameof(Employee.Name)" HeaderText="Summary"></GridColumn>
+            <GridColumn Field="@nameof(Employee.Gender)" HeaderText="TemperatureC"></GridColumn>
+            <GridColumn Field="@nameof(Employee.Email)" HeaderText="TemperatureC"></GridColumn>
+        </GridColumns>
+    </SfGrid>
+}
+
+@code {
+
+    public IEnumerable<Employee> Employees { get; set; }
+
+
+   // [Inject]
+  //  public IEmployeeService EmployeeService { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+       // Employees = await EmployeeService.GetEmployees();
+    }
+}

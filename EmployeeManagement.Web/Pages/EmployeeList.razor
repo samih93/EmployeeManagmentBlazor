@@ -1,0 +1,66 @@
+﻿@page "/"
+@attribute [Authorize]
+<h3>Selected Employees Count : @SelectedEmployeeCount</h3>
+
+@if (Employees == null)
+{
+    <div class="spinner">
+
+    </div>
+}
+else
+{
+    <input type="checkbox" id="showfooter" @bind="@ShowFooter" title="Show Footer" /> <label for="showfooter">ShowFooter</label>
+    <div class="card-deck">
+        @foreach (var employee in Employees)
+        {
+            <DisplayEmployee Employee="@employee" ShowFooter="@ShowFooter" OnEmployeeSelection="@EmployeeSelectionChanged" OnEmployeeDeleted="Employeedeleted" Employee_index="@employee.Id"></DisplayEmployee>
+
+        }
+    </div>
+}
+
+
+@code {
+    public IEnumerable<Employee> Employees { get; set; }
+    public bool ShowFooter { get; set; } = true;
+    public string cssclass { get; set; } = null;
+    public int SelectedEmployeeCount { get; set; } = 0;
+
+    [Inject]
+    public IEmployeeService EmployeeService { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Employees = await EmployeeService.GetAllEmployees();
+    }
+    public void EmployeeSelectionChanged(bool isselected)
+    {
+        if (isselected)
+        {
+            SelectedEmployeeCount++;
+        }
+        else
+        {
+            SelectedEmployeeCount--;
+        }
+    }
+
+    protected async Task Employeedeleted()
+    {
+        Employees = await EmployeeService.GetAllEmployees();
+    }
+
+
+    public void onchange_status()
+    {
+        //if (ShowFooter == false)
+        //{
+        //    cssclass = "HideFooter";
+        //}
+        //else
+        //{
+        //    cssclass = null;
+        //}
+    }
+}

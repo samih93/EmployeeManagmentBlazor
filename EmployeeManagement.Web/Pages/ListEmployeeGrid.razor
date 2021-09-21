@@ -1,0 +1,424 @@
+﻿@page "/listEmployeeGrid"
+@using Syncfusion.Blazor
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.Inputs
+@using Syncfusion.Blazor.Buttons
+@using Syncfusion.Blazor.Charts
+
+<NotificationComponet @ref="notificationComponet"></NotificationComponet>
+<SfAutoComplete TValue="string" TItem="Employee" Placeholder="Employees ...." DataSource="@Employees" @bind-Value="@AutocompleteVal">
+    <AutoCompleteFieldSettings Value="Name"></AutoCompleteFieldSettings>
+</SfAutoComplete>
+
+<h3>Grid Employee</h3>
+@if (!string.IsNullOrEmpty(AutocompleteVal))
+{
+    <div>Employee Selected is : @AutocompleteVal</div>
+}
+
+@* for toolbal search *@
+@*@{
+        var SearchTool = new List<string>() { "Search" };
+        var SearchColumns = new string[] { "Name","Email" };
+    }*@
+
+@*just add Toolbar="SearchTool" in SfGrid the search work perfectly*@
+
+
+@if (Employees == null)
+{
+    <div class="spinner">
+
+    </div>
+}
+else
+{
+    <SfGrid @ref="EmployeeGrid" DataSource="@Employees" AllowPaging="true" AllowFiltering="true" Toolbar="@(new List<string>() { "Add" , "Edit","Update","Delete","cancel"})">
+        <GridEditSettings AllowNextRowEdit="true" Mode="EditMode.Normal" AllowAdding="true" AllowDeleting="true" AllowEditing="true">
+            <HeaderTemplate>
+                <span>@GetHeaderText(context as Employee)</span>
+            </HeaderTemplate>
+        </GridEditSettings>
+        @* manual toolbar *@
+        <!--<SfToolbar>
+            <ToolbarItems>
+                <ToolbarItem  Type="ItemType.Input" Align="ItemAlign.Right">
+                    <Template>
+                        <SfTextBox @ref="TxtSearch" Placeholder="Search ... " ></SfTextBox>-->
+        @*Input="OnInputSearch"*@
+        <!--</Template>
+                </ToolbarItem>
+                <ToolbarItem Type="ItemType.Button" Align="ItemAlign.Right">
+                    <Template>
+                        <SfButton @onclick="onclickSearch">Search</SfButton>
+                    </Template>
+                </ToolbarItem>
+            </ToolbarItems>
+        </SfToolbar>-->
+        <GridSelectionSettings Mode="Syncfusion.Blazor.Grids.SelectionMode.Row"></GridSelectionSettings>
+        <GridSearchSettings></GridSearchSettings> @*Fields="@SearchColumns"*@
+        <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu">
+
+        </GridFilterSettings>
+        @*<GridGroupSettings ShowGroupedColumn="true">
+                <CaptionTemplate>
+                    @{
+                        var employee = (context as CaptionTemplateContext);
+                            <div> @employee.Field : @employee.Key - @employee.Count Employees </div>
+                    }
+                </CaptionTemplate>
+            </GridGroupSettings>*@
+        @*<GridSortSettings AllowUnsort="false">
+                <GridSortColumns>
+                    <GridSortColumn Field="Name" Direction="SortDirection.Descending"></GridSortColumn>
+                </GridSortColumns>
+            </GridSortSettings>*@
+        @*PageSizes="true" <--- display dropdown right to pager contain number of record*@
+        @*<SfDataManager Adaptor="Adaptors.CustomAdaptor" AdaptorInstance="@typeof(EmployeeAdapter)"/>*@
+
+        <GridPageSettings PageSize="10" PageCount="3" PageSizes="@PagerDrowpdown">
+        </GridPageSettings>
+        <GridEvents CommandClicked="oncommadclicked" OnBatchSave="BatchSaveHandler" OnActionBegin="ActionBeginHandler" TValue="Employee">
+        </GridEvents>
+        <GridColumns>
+            <GridColumn HeaderText="Employee Photo" TextAlign="TextAlign.Center" Width="120">
+                <Template>
+                    <img  class="employeeimage" src="/Images/@((context as Employee).Photopath)"/>
+                </Template>
+            </GridColumn>
+            <GridColumn AllowAdding="false" IsPrimaryKey="true" Field="@nameof(Employee.Id)" HeaderText="Id" FilterSettings="@(new FilterSettings() { Type=Syncfusion.Blazor.Grids.FilterType.Menu})"></GridColumn>
+            <GridColumn Field="@nameof(Employee.Name)" HeaderText="Name" FilterSettings="@(new FilterSettings() { Type=Syncfusion.Blazor.Grids.FilterType.CheckBox})"></GridColumn>
+            <GridColumn Field="@nameof(Employee.BirthDate)" HeaderText="BirthDate">
+                <Template>
+                    @((context as Employee).BirthDate.ToString("dd-MM-yyyy"))
+                </Template>
+            </GridColumn>
+
+            <GridColumn Field="@(nameof(Employee.DepartmentId))" HeaderText="DepartmentName">
+                <Template>
+                    <span>@GetDepartmentById((context as Employee).DepartmentId)</span>
+                </Template>
+                <EditTemplate>
+                    @* dropdown from database  *@
+                    <SfDropDownList DataSource="@Departments" TItem="Department" TValue="int" @bind-Value="@((context as Employee).DepartmentId)">
+                        <DropDownListFieldSettings Value="Id" Text="DepartmentName"></DropDownListFieldSettings>
+                    </SfDropDownList>
+                </EditTemplate>
+            </GridColumn>
+
+            <GridColumn Field="@nameof(Employee.Gender)" HeaderText="Gendar">
+                @* dropdown from Enum *@
+                <EditTemplate>
+                    <SfDropDownList DataSource="@EnumGendarValues" TItem="string" TValue="Gender" @bind-Value="@((context as Employee).Gender)">
+                    </SfDropDownList>
+                </EditTemplate>
+                <FilterTemplate>
+                    <SfDropDownList Placeholder="All" DataSource="@dropDownListItems" TItem="DropDownListItem" TValue="String">
+                        <DropDownListFieldSettings Value="Value" Text="Text"></DropDownListFieldSettings>
+                        <DropDownListEvents TItem="DropDownListItem" TValue="String" ValueChange="@GendarValuechanged"></DropDownListEvents>
+                    </SfDropDownList>
+                </FilterTemplate>
+            </GridColumn>
+            <GridColumn AllowSearching="false" AllowSorting="false" Field="@nameof(Employee.Email)" HeaderText="Email" AllowFiltering="false"></GridColumn>
+            @* Start More Actions Button*@
+            <GridColumn HeaderText="More Actions">
+                <GridCommandColumns>
+
+                    <GridCommandColumns>
+                        <GridCommandColumn ButtonOption="@(new CommandButtonOptions() { Content="U" ,CssClass="e-flat"})"></GridCommandColumn>
+                        <GridCommandColumn ButtonOption="@(new CommandButtonOptions() { Content="L" ,CssClass="e-flat"})"></GridCommandColumn>
+
+                    </GridCommandColumns>
+                </GridCommandColumns>
+            </GridColumn>
+            @* End  More Actions Button*@
+
+        </GridColumns>
+    </SfGrid>
+
+    <SfChart>
+        <ChartPrimaryXAxis  Title="Names" ValueType="Syncfusion.Blazor.Charts.ValueType.Category"></ChartPrimaryXAxis>
+        <ChartPrimaryYAxis Title="Age"></ChartPrimaryYAxis>
+        <ChartTooltipSettings Enable="true"></ChartTooltipSettings>
+
+        <ChartSeriesCollection>
+            <ChartSeries DataSource="@Employees" XName="Name" YName="Id" Type="ChartSeriesType.Column">
+                @*<ChartMarker>
+                    <ChartDataLabel Visible="true"></ChartDataLabel>
+                </ChartMarker>*@
+            </ChartSeries>
+        </ChartSeriesCollection>
+    </SfChart>
+}
+
+
+@code {
+    public string AutocompleteVal { get; set; }
+    private string content = "Play";
+    private string iconCss = "e-btn-sb-icons e-play-icon";
+
+    public string[] PagerDrowpdown { get; set; } = new string[] { "All", "5", "15", "50" };
+    public List<Employee> Employees { get; set; }
+    public List<Department> Departments { get; set; }
+
+    public SfGrid<Employee> EmployeeGrid { get; set; }
+    public SfTextBox TxtSearch { get; set; }
+
+    [Inject]
+    public IEmployeeService EmployeeService { get; set; }
+    [Inject]
+    public IDepartmentService DepartmentService { get; set; }
+
+    List<DropDownListItem> dropDownListItems = EnumHelper.EnumToDropDown<Gender>("All", "All");
+
+
+    public string[] EnumGendarValues { get; set; } = Enum.GetNames(typeof(Gender));
+
+    protected EmployeeManagement.Componets.NotificationComponet notificationComponet { get; set; }
+
+
+    public string StyleForRowInGrid { get; set; }
+    public int IndexForStyleForRowInGrid { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Employees = (await EmployeeService.GetAllEmployees()).ToList();
+        Departments = (await DepartmentService.GetDepartments()).ToList();
+    }
+    public string GetHeaderText(Employee employee)
+    {
+        if (employee.Id == 0)
+        {
+            return "Add New Employee";
+        }
+        else
+        {
+            return $" Details of {employee.Name}";
+        }
+    }
+
+
+
+    // filter by gender
+    protected void GendarValuechanged(ChangeEventArgs<string, DropDownListItem> args)
+    {
+        if (!args.Value.ToString().Equals("All"))
+            EmployeeGrid.FilterByColumnAsync("Gender", "equal", args.Value);
+        else
+            EmployeeGrid.ClearFilteringAsync("Gender");
+    }
+
+
+    // for more action button
+    public void oncommadclicked(CommandClickEventArgs<Employee> args)
+    {
+        if (args.CommandColumn.ButtonOption.Content.Equals("U"))
+        {
+            args.RowData.Name = args.RowData.Name.ToUpper();
+            args.RowData.Email = args.RowData.Email.ToUpper();
+            StyleForRowInGrid = "#afffaf";
+            IndexForStyleForRowInGrid = EmployeeGrid.CurrentViewData.ToList().IndexOf(args.RowData);
+            EmployeeGrid.Refresh();
+        }
+
+        if (args.CommandColumn.ButtonOption.Content.Equals("L"))
+        {
+            args.RowData.Name = args.RowData.Name.ToLower();
+            args.RowData.Email = args.RowData.Email.ToLower();
+            StyleForRowInGrid = "#ff9191";
+            IndexForStyleForRowInGrid = EmployeeGrid.CurrentViewData.ToList().IndexOf(args.RowData);
+            EmployeeGrid.Refresh();
+        }
+    }
+    public async void OnInputSearch(InputEventArgs args)
+    {
+        await EmployeeGrid.SearchAsync(args.Value);
+    }
+    public async void onclickSearch()
+    {
+        await EmployeeGrid.SearchAsync(TxtSearch.Value);
+    }
+
+    public string GetDepartmentById(int id)
+    {
+        if (id == 0)
+        {
+            return "--";
+        }
+        else
+        {
+            return Departments.FirstOrDefault(i => i.Id == id).DepartmentName.ToString();
+        }
+    }
+
+    public async Task BatchSaveHandler(BeforeBatchSaveArgs<Employee> args)
+    {
+        var inserts = args.BatchChanges.AddedRecords;
+        var updates = args.BatchChanges.ChangedRecords;
+        var deletes = args.BatchChanges.DeletedRecords;
+
+        foreach (var employee in inserts)
+        {
+            await EmployeeService.CreateEmployee(employee);
+        }
+        foreach (var employee in updates)
+        {
+            await EmployeeService.UpdateEmployee(employee);
+        }
+        foreach (var employee in deletes)
+        {
+            await EmployeeService.DeleteEmployee(employee.Id);
+        }
+    }
+
+    public async void ActionBeginHandler(ActionEventArgs<Employee> Args)
+    {
+        if (Args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Save))
+        {
+            if (Args.Action == "Add")
+            {
+                if (Args.Data.DepartmentId != 0)
+                {
+                    await EmployeeService.CreateEmployee(Args.Data);
+                    notificationComponet.ErrorMessage = $"Employee {Args.Data.Name} Inserted Successfully";
+                    notificationComponet.AlertType = "alert-success";
+                    Employees = (await EmployeeService.GetAllEmployees()).ToList();
+                    EmployeeGrid.Refresh();
+
+
+                }
+                else
+                {
+                    notificationComponet.ErrorMessage = "Please Enter Department Field then try again";
+                    notificationComponet.AlertType = "alert-danger";
+                }
+                notificationComponet.ShowNotification();
+
+
+            }
+            else
+            {
+                if (Args.Data.Id != 0)
+                {
+                    await EmployeeService.UpdateEmployee(Args.Data);
+                    notificationComponet.ErrorMessage = $"Employee {Args.Data.Name} Updated Successfully";
+                    notificationComponet.AlertType = "alert-success";
+                }
+                else
+                {
+                    notificationComponet.ErrorMessage = $"Employee {Args.Data.Name} Inserted Successfully";
+                    notificationComponet.AlertType = "alert-success";
+                    await EmployeeService.CreateEmployee(Args.Data);
+                }
+                Employees = (await EmployeeService.GetAllEmployees()).ToList();
+                EmployeeGrid.Refresh();
+                notificationComponet.ShowNotification();
+
+            }
+        }
+        if (Args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Delete))
+        {
+            await EmployeeService.DeleteEmployee(Args.Data.Id);
+            notificationComponet.ErrorMessage = $"Employee {Args.Data.Name} Deleted Successfully";
+            notificationComponet.AlertType = "alert-success";
+            notificationComponet.ShowNotification();
+        }
+
+
+    }
+    private void onToggleClick(MouseEventArgs args, int id)
+    {
+        if (content == "Play")
+        {
+            content = "Pause";
+            iconCss = "e-btn-sb-icons e-pause-icon";
+            IndexForStyleForRowInGrid = EmployeeGrid.CurrentViewData.ToList().IndexOf(args);
+
+        }
+        else
+        {
+            content = "Play";
+            iconCss = "e-btn-sb-icons e-play-icon";
+        }
+    }
+
+   
+
+   
+
+
+
+
+}
+
+<style>
+
+    .employeeimage {
+        width:80px;
+        height:80px;
+        border-radius:40px;
+    }
+    .sf-license-warning {
+        display: none;
+    }
+    tr[aria-rowindex='@IndexForStyleForRowInGrid'] {
+        background-color: @StyleForRowInGrid;
+    }
+
+    #button-control {
+        width: 100%;
+        margin: 8% 0;
+        text-align: center;
+    }
+
+    @@media only screen and (max-width: 500px) {
+        #button-control {
+            margin-left: -3%;
+        }
+    }
+
+    .button-section {
+        width: 80%;
+        margin: auto;
+    }
+
+    #button-control .col-xs-12 {
+        margin: 15px 0;
+    }
+
+    @@font-face {
+        font-family: 'button-icons';
+        src: url(data:application/x-font-ttf;charset=utf-8;base64,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) format('truetype');
+        font-weight: normal;
+        font-style: normal;
+    }
+
+    .e-btn-sb-icons {
+        font-family: 'button-icons';
+        line-height: 1;
+        font-style: normal;
+        font-weight: normal;
+        font-variant: normal;
+        text-transform: none;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    .e-play-icon::before {
+        content: '\e701';
+    }
+
+    .e-pause-icon::before {
+        content: '\e705';
+    }
+
+    .e-open-icon::before {
+        content: '\e70d';
+    }
+
+    .e-add-icon::before {
+        content: '\e70a';
+    }
+</style>
+

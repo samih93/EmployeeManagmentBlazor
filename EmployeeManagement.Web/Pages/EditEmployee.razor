@@ -1,0 +1,203 @@
+﻿@page "/editemployee/{id}"
+@page "/editemployee"
+
+
+<EditForm Model="@EditEmployeeModel" OnValidSubmit="HandleValidSubmit">
+    <h3>@PageHedearText</h3>
+    <hr />
+    <ObjectGraphDataAnnotationsValidator />
+    <ValidationSummary />
+
+
+    <div class="form-group row">
+        <label for="firstname" class="col-sm-2 col-form-label">FirstName</label>
+        <div class="col-md-10">
+            <InputText id="firstname" class="form-control" @bind-Value="EditEmployeeModel.Name"></InputText>
+            <ValidationMessage For="@(()=>EditEmployeeModel.Name)" />
+        </div>
+    </div>
+    <div class="form-group row">
+
+        <label for="email" class="col-sm-2 col-form-label">Email</label>
+        <div class="col-md-10">
+            <InputText id="email" class="form-control" @bind-Value="EditEmployeeModel.Email"></InputText>
+            <ValidationMessage For="@(()=>EditEmployeeModel.Email)" />
+
+        </div>
+
+    </div>
+    <div class="form-group row">
+
+        <label for="confirmemail" class="col-sm-2 col-form-label">Confirm Email</label>
+        <div class="col-md-10">
+            <InputText id="email" class="form-control" @bind-Value="EditEmployeeModel.ConfirmEmail"></InputText>
+            <ValidationMessage For="@(()=>EditEmployeeModel.ConfirmEmail)" />
+
+        </div>
+
+    </div>
+
+    <div class="form-group row">
+
+        <label for="Gendar" class="col-sm-2 col-form-label">Gendar</label>
+        <div class="col-md-10">
+            <InputSelect id="Gendar" class="form-control"
+                         @bind-Value="EditEmployeeModel.Gender">
+                @foreach (var g in Enum.GetValues(typeof(Gender)))
+                {
+                    <option value="@g">@g</option>
+                }
+            </InputSelect>
+
+        </div>
+
+    </div>
+
+    <div class="form-group row">
+
+        <label for="department" class="col-sm-2 col-form-label">Department</label>
+        <div class="col-md-10">
+            <CustomInputSelect id="department" class="form-control" @bind-Value="EditEmployeeModel.DepartmentId">
+                @foreach (var dept in Departments)
+                {
+                    <option value="@dept.Id">@dept.DepartmentName</option>
+                }
+            </CustomInputSelect>
+
+        </div>
+
+    </div>
+    @*<input type="hidden" @bind-value="EditEmployeeModel.Department.DepartmentName" />*@
+
+    @*<div class="form-group row">
+
+            <label for="birthdate" class="col-sm-2 col-form-label">Birth Date</label>
+            <div class="col-md-10">
+                <InputDate id="birthdate" class="form-control" @bind-Value="EditEmployeeModel.BirthDate">
+                </InputDate>
+            </div>
+
+        </div>*@
+
+    @*<div class="form-group row">
+
+            <label for="departmentname" class="col-sm-2 col-form-label">Department Name</label>
+            <div class="col-md-10">
+                <InputText id="departmentname" class="form-control" @bind-Value="EditEmployeeModel.Department.Name">
+                </InputText>
+                <ValidationMessage For="@(()=>EditEmployeeModel.Department.Name)" />
+
+            </div>
+
+        </div>*@
+
+    <button class="btn btn-primary mr-3" type="submit">Submit</button>
+    @if (EditEmployeeModel.Id > 0)
+    {
+        <button class="btn btn-danger" type="button" @onclick="DeleteEmployee">Delete</button>
+
+    }
+
+    @*<div class="form-group row">
+
+            <label for="gendar" class="col-sm-2 col-form-label">Gendar</label>
+            <div class="col-md-10">
+                <InputText id="gendar" class="form-control" bind-value="@Employee.Gender"></InputText>
+            </div>
+
+        </div>*@
+
+</EditForm>
+@code {
+
+
+    @using System.Net;
+    [Inject]
+    // to navigate to specific url 
+    NavigationManager NavigationManager { get; set; }
+    [Inject]
+    public IEmployeeService EmployeeService { get; set; }
+    [Inject]
+    public IDepartmentService DepartmentService { get; set; }
+
+    [Inject]
+    public IMapper Mapper { get; set; }
+
+    public string PageHedearText { get; set; }
+    public string DepartmentName { get; set; }
+    private Employee Employee { get; set; } = new Employee();
+    public List<Department> Departments { get; set; } = new List<Department>();
+
+    public EditEmployeeModel EditEmployeeModel { get; set; } = new EditEmployeeModel();
+
+    [Parameter]
+    public string Id { get; set; }
+
+    [CascadingParameter]
+    public Task<AuthenticationState> AuthenticationStateTask { get; set; }
+
+
+    protected async override Task OnInitializedAsync()
+    {
+        var AuthenticationState = await AuthenticationStateTask;
+        if (!AuthenticationState.User.Identity.IsAuthenticated)
+        {
+            string returnUrl = WebUtility.UrlEncode($"/editEmployee/{Id}");
+            NavigationManager.NavigateTo($"identity/Account/Login?returnUrl={returnUrl}");
+        }
+        int.TryParse(Id, out int employeeId);
+        if (employeeId != 0)
+        {
+            Employee = await EmployeeService.GetEmployee(int.Parse(Id));
+            PageHedearText = "Edit Employee";
+        }
+        else
+        {
+            Employee = new Employee()
+            {
+                DepartmentId = 2,
+                BirthDate = DateTime.Now,
+                Photopath = "samih.jpg"
+
+            };
+            PageHedearText = " Create Employee";
+        }
+        Departments = (await DepartmentService.GetDepartments()).ToList();
+
+        // first parameter is the source , second is the destination
+
+        Mapper.Map(Employee, EditEmployeeModel);
+        //EditEmployeeModel.Department = Departments.FirstOrDefault(i => i.Id == Employee.DepartmentId);
+
+    }
+
+    public async Task HandleValidSubmit()
+    {
+        Mapper.Map(EditEmployeeModel, Employee);
+        Employee result = null;
+        if (Employee.Id != 0)
+        {
+            result = await EmployeeService.UpdateEmployee(Employee);
+        }
+        else
+        {
+            result = await EmployeeService.CreateEmployee(Employee);
+        }
+        if (result != null)
+        {
+            // return to home 
+            NavigationManager.NavigateTo("/");
+        }
+    }
+
+    public async Task DeleteEmployee()
+    {
+        Mapper.Map(EditEmployeeModel, Employee);
+        if (Employee.Id != 0)
+        {
+            await EmployeeService.DeleteEmployee(Employee.Id);
+            NavigationManager.NavigateTo("/");
+        }
+    }
+
+}

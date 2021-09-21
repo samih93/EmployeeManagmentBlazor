@@ -1,0 +1,33 @@
+﻿@if (IsvisibleNotfication)
+{
+    <div class="alert @AlertType" role="alert">
+        @ErrorMessage
+        <button type="button" class="close" @onclick="handleclosebutton" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+}
+
+@code {
+    public bool IsvisibleNotfication { get; set; }
+    public string AlertType { get; set; }
+    public string ErrorMessage { get; set; }
+
+    public void ShowNotification()
+    {
+        IsvisibleNotfication = true;
+        StateHasChanged();
+
+    }
+
+
+    public void  handleclosebutton()
+    {
+        IsvisibleNotfication = false;
+    }
+    public void HideNotification()
+    {
+        IsvisibleNotfication = false;
+    }
+
+}

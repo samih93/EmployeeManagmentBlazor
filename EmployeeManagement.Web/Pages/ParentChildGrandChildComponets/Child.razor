@@ -1,0 +1,13 @@
+﻿<h1 style="@ElementStyle ;@H1Border"> -Child Componet Text - @Counter </h1>
+<GrandChild></GrandChild>
+
+@code
+{
+    [CascadingParameter(Name ="ColorStyle")]
+    public string ElementStyle { get; set; }
+    [CascadingParameter(Name = "BorderStyle")]
+    public string H1Border { get; set; }
+    [CascadingParameter(Name = "Counter")]
+    public int Counter { get; set; }
+}
+
